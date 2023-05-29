@@ -1,7 +1,8 @@
 import styled from "styled-components";
 
 interface LayoutProps {
-  children: React.ReactNode[];
+  children: React.ReactNode[] | React.ReactNode;
+  styles?: any;
 }
 
 const BaseLayer = styled.div`
@@ -10,17 +11,19 @@ const BaseLayer = styled.div`
 `;
 
 const Scaffold = styled.div`
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
-  max-width: 720px;
+  max-width: 590px;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
   border: 1px solid #333;
+  overflow: hidden;
 `;
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children, styles }: LayoutProps) => {
   return (
     <BaseLayer>
-      <Scaffold>{children}</Scaffold>
+      <Scaffold {...styles}>{children}</Scaffold>
     </BaseLayer>
   );
 };

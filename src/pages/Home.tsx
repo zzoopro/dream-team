@@ -6,8 +6,7 @@ const Home = () => {
   return (
     <Layout>
       <Header />
-      <h1>Main</h1>
-      <img src="/images/football_field.svg" alt="" />
+      <h1>HOME</h1>
       <Footer />
     </Layout>
   );
