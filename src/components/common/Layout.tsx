@@ -1,8 +1,8 @@
-import styled from "styled-components";
+import styled, { ThemeProps } from "styled-components";
 
 interface LayoutProps {
   children: React.ReactNode[] | React.ReactNode;
-  styles?: any;
+  bgColor?: string;
 }
 
 const BaseLayer = styled.div`
@@ -10,20 +10,21 @@ const BaseLayer = styled.div`
   justify-content: center;
 `;
 
-const Scaffold = styled.div`
+const Scaffold = styled.div<{ background?: string }>`
   min-height: 100vh;
-  max-width: 590px;
+  max-width: 690px;
   width: 100%;
   padding: 10px;
   box-sizing: border-box;
-  border: 1px solid #333;
+  border: 1px solid #999;
   overflow: hidden;
+  background-color: ${(props) => props.background ?? "transparent"};
 `;
 
-const Layout = ({ children, styles }: LayoutProps) => {
+const Layout = ({ children, bgColor }: LayoutProps) => {
   return (
     <BaseLayer>
-      <Scaffold {...styles}>{children}</Scaffold>
+      <Scaffold background={bgColor}>{children}</Scaffold>
     </BaseLayer>
   );
 };

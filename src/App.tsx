@@ -2,7 +2,9 @@ import { RecoilRoot } from "recoil";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import ReactRouter from "./router";
-import GlobalStyle from "./css/GlobalStyle";
+import GlobalStyle from "./styles/GlobalStyle";
+import { ThemeProvider } from "styled-components";
+import theme from "./styles/theme";
 
 function App() {
   const queryClient = new QueryClient();
@@ -11,7 +13,9 @@ function App() {
     <RecoilRoot>
       <QueryClientProvider client={queryClient}>
         <GlobalStyle />
-        <ReactRouter />
+        <ThemeProvider theme={theme}>
+          <ReactRouter />
+        </ThemeProvider>
       </QueryClientProvider>
     </RecoilRoot>
   );
