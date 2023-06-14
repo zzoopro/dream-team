@@ -6,7 +6,10 @@ ${reset}
 
 #root {
   background-color: #333;    
-  font-family: "NotoSans", "NotoSans-kr", "Roboto";
+  font-family: "NotoSans", "NotoSans-kr", "Roboto";  
+}
+body {
+  overflow: hidden;
 }
 
 `;

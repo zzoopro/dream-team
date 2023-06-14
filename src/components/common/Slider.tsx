@@ -1,20 +1,17 @@
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useTransform,
-} from "framer-motion";
+import { motion, useMotionValue } from "framer-motion";
 import React, {
-  DragEvent,
-  DragEventHandler,
+  RefObject,
   TouchEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import styled from "styled-components";
+import Box from "../UI/Box";
 
-const Window = styled(motion.div)`
+const Window = styled.div`
   position: relative;
   width: 100%;
   height: 300px;
@@ -29,6 +26,8 @@ const SliderWrap = styled(motion.div)`
   flex-direction: column;
   width: 100%;
   height: max-content;
+  transform: translateY(0px);
+  transition: all ease-out 0.1s;
 `;
 
 const Item = styled(motion.div)`
@@ -38,6 +37,7 @@ const Item = styled(motion.div)`
   pointer-events: none;
   width: 100%;
   height: 60px;
+  font-weight: 200;
 `;
 
 const CenterPointer = styled(motion.div)`
@@ -54,80 +54,138 @@ const CenterPointer = styled(motion.div)`
   opacity: 0.1;
 `;
 
+let startY: number;
+const IH = 60;
+const ITEM_LENGTH = 12;
+const ITEMS = Array.from({ length: ITEM_LENGTH }, (_, i) => i + 1);
+
 const TimeSlider = () => {
-  const TimeLine = Array.from({ length: 12 }, (_, i) => i + 1);
-  const [numbers, setNumbers] = useState(TimeLine);
   const windowRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
-
+  const ItemsRef = useRef<HTMLDivElement[]>([]);
+  const centerRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
 
-  // const changeY = useTransform(y, (event: any) => {
-  //   console.log(event);
-  //   y.set(-120);
-  // });
+  const [value, setValue] = useState<any>();
 
-  // const onDragEnd = (event: any, info: any) => {
-  //   const velocity = info.velocity.y;
-  //   setTimeout(() => {
-  //     let [x, translateY, z]: string[] =
-  //       sliderRef.current?.style.transform.split(" ") as any;
+  useEffect(() => {
+    if (ItemsRef.current) {
+      const selected = ItemsRef.current[0];
+      selected.style.fontWeight = "bold";
+      setValue(selected.innerText);
+    }
+  }, []);
 
-  //     let numY: number = 0;
-  //     if (translateY && sliderRef.current) {
-  //       const startIdx = translateY.indexOf("(");
-  //       const lastIdx = translateY.indexOf("px");
-  //       numY = Number(translateY.slice(startIdx + 1, lastIdx));
+  const onTouchStartCapture: TouchEventHandler = useCallback((event) => {
+    startY = Math.ceil(event.touches[0].clientY);
+  }, []);
 
-  //       const remainder = numY % 60;
-  //       if (remainder > 30) {
-  //         const spare = 60 - remainder;
-  //         numY = numY + spare;
-  //       } else {
-  //         numY = numY - remainder;
-  //       }
-  //       console.log(numY);
+  const onTouchEndCapture: TouchEventHandler = useCallback((event) => {
+    const currentY = y.get();
+    if (currentY > 0) return y.set(0);
+    if (currentY < (-ITEM_LENGTH + 1) * IH) {
+      return y.set((-ITEM_LENGTH + 1) * IH);
+    }
 
-  //       const newTransform = `${x} translateY(${numY - 60}px) ${z}`;
-  //       sliderRef.current.style.transform = newTransform;
-  //     }
-  //   }, 0);
-  // };
+    const remainder = Math.abs(currentY % IH);
+    if (remainder > IH / 2) {
+      return y.set(currentY - (IH - remainder));
+    }
+    if (remainder < IH / 2) {
+      return y.set(currentY + remainder);
+    }
+  }, []);
 
-  const onDragEnd = (event: any, info: any) => {
-    const velocity = info.velocity.y;
-    setTimeout(() => {
-      const currentY = y.get();
-      const remainder = currentY % 60;
-      let targetY: number;
-      if (remainder > 30) {
-        const spare = 60 - remainder;
-        targetY = currentY + spare;
+  interface Rect {
+    top: number;
+    left: number;
+    bottom: number;
+    right: number;
+  }
+  const isTarget = useCallback((a: Rect, b: Rect): boolean => {
+    const aCenter = (a.top + a.bottom) / 2;
+    const bCenter = (b.top + b.bottom) / 2;
+    if (
+      Math.abs(aCenter - bCenter) <= IH / 2 &&
+      Math.abs(bCenter - aCenter) <= IH / 2
+    ) {
+      return true;
+    }
+    return false;
+  }, []);
+
+  const onTouchMove: TouchEventHandler = useCallback((event) => {
+    const currentY = Math.ceil(event.touches[0].clientY);
+    if (!startY || startY === currentY) return;
+    y.set(y.get() + currentY - startY);
+    startY = Math.ceil(event.touches[0].clientY);
+    compareRect();
+  }, []);
+
+  const compareRect = useCallback(() => {
+    const aRect: Rect = centerRef.current?.getBoundingClientRect()!;
+    ItemsRef.current.forEach((item) => {
+      const bRect: Rect = item.getBoundingClientRect();
+      if (isTarget(aRect, bRect)) {
+        item.style.fontWeight = "bold";
+        setValue(item.innerText);
       } else {
-        targetY = currentY - remainder;
+        item.style.fontWeight = "";
       }
-      console.log(targetY);
-      y.set(targetY);
-    }, Math.abs(velocity));
-  };
+    });
+  }, []);
+
+  // useEffect(() => {
+  //   const callback = (entries: any) => {
+  //     entries.forEach((entry: any) => {
+  //       const visibles = entries.filter((entry: any) => entry.isIntersecting);
+  //       visibles.forEach((visible: any) => {
+  //         console.log(visible);
+  //       });
+  //     });
+  //   };
+
+  //   let options = {
+  //     rootMargin: "0px",
+  //     threshold: 1.0,
+  //   };
+
+  //   let observer = new IntersectionObserver(callback, options);
+  //   ItemsRef.current.forEach((item: HTMLDivElement) => {
+  //     observer.observe(item);
+  //   });
+  // }, []);
+
+  // const round = (ref: number, value: number) => {
+  //   if (value % ref > ref / 2) {
+  //     return value - ref / 2;
+  //   }
+  //   return value + (value % ref);
+  // };
 
   return (
     <Window ref={windowRef}>
-      <CenterPointer />
+      <CenterPointer ref={centerRef} />
       <SliderWrap
         ref={sliderRef}
-        style={{ transform: `translateY(${y}px)` }}
-        drag="y"
-        dragConstraints={windowRef}
-        dragMomentum={false}
-        onDragEnd={onDragEnd}
+        onTouchEndCapture={onTouchEndCapture}
+        onTouchStartCapture={onTouchStartCapture}
+        onTouchMove={onTouchMove}
+        onTransitionEnd={compareRect}
+        style={{ y }}
       >
-        {numbers.map((item, i) => (
-          <Item key={i}>{item}</Item>
+        <Box height={IH * 2} />
+        {ITEMS.map((item, i) => (
+          <Item key={item} ref={(el: any) => (ItemsRef.current[i] = el)}>
+            {item}
+          </Item>
         ))}
+        <Box height={IH * 2} />
       </SliderWrap>
     </Window>
   );
 };
 
 export default TimeSlider;
+
+// round(IH, y.get()) / IH
