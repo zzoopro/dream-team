@@ -1,6 +1,6 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useState } from "react";
+import React, { DragEvent, TouchEventHandler, useState } from "react";
 import styled from "styled-components";
 
 const SliderWrap = styled.div`
@@ -9,7 +9,7 @@ const SliderWrap = styled.div`
   flex-direction: column;
   width: 100%;
   height: 300px;
-  background: #ddd;
+  background-color: #fff;
 `;
 
 interface ItemProps {
@@ -28,17 +28,10 @@ const makeTop = ({ index }: ItemProps) => {
   return "50%";
 };
 
-const makeHeight = ({ index }: ItemProps) => {
-  if (index === 0 || index === OFFSET - 1) return "70px";
-  if (index === 1 || index === OFFSET - 2) return "70px";
-  if (index === 2 || index === OFFSET - 3) return "80px";
-  return "50px";
-};
-
 const makeFontSize = ({ index }: ItemProps) => {
-  if (index === 0 || index === OFFSET - 1) return "16px";
-  if (index === 1 || index === OFFSET - 2) return "18px";
-  if (index === 2 || index === OFFSET - 3) return "20px";
+  if (index === 0 || index === OFFSET - 1) return "14px";
+  if (index === 1 || index === OFFSET - 2) return "16px";
+  if (index === 2 || index === OFFSET - 3) return "24px";
   return "16px";
 };
 
@@ -49,20 +42,28 @@ const makeFontWeight = ({ index }: ItemProps) => {
   return 200;
 };
 
+const makeOpacity = ({ index }: ItemProps) => {
+  if (index === 0 || index === OFFSET - 1) return 0.2;
+  if (index === 1 || index === OFFSET - 2) return 0.4;
+  if (index === 2 || index === OFFSET - 3) return 1;
+  return 0;
+};
+
 const Item = styled(motion.div)<{ index: number }>`
   position: absolute;
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid red;
-  background-color: #d9d9d9;
-  cursor: pointer;
+  /* border: 1px solid red; */
+  /* background-color: #d9d9d9; */
+  pointer-events: none;
   width: 100%;
   height: 90px;
   font-size: ${makeFontSize};
-  font-weight: ${makeFontWeight};
+  font-weight: bold;
   top: ${makeTop};
   z-index: ${makeZindex};
+  opacity: ${makeOpacity};
 `;
 
 const OFFSET = 5;
@@ -77,14 +78,14 @@ const TimeSlider = () => {
   const [numbers, setNumbers] = useState(TimeRoll);
 
   const [transition, setTransition] = useState(`all ${TIME}s`);
-
+  console.log(current);
   const plus = () => {
     if (current === 0) {
       setCurrent((prev: number) => prev + 1);
-      setTimeout(() => {
-        setTransition("all 0s");
-        setCurrent(-MAX + 1);
-      }, TIME + 0.1);
+      // setTimeout(() => {
+      //   setTransition("all 0s");
+      //   setCurrent(-MAX + 1);
+      // }, TIME + 0.1);
 
       return;
     }
@@ -100,22 +101,47 @@ const TimeSlider = () => {
     setCurrent((prev: number) => prev - 1);
   };
 
+  let startY: number;
+  let dragY: number;
+  let onDragging: boolean = false;
+  const onTouchStart: TouchEventHandler<HTMLDivElement> = (event) => {
+    console.log("touchStart");
+    onDragging = true;
+    startY = event.touches[0].pageY;
+  };
+  const onDrag: TouchEventHandler<HTMLDivElement> = (event) => {
+    dragY = event.touches[0].pageY;
+    console.log("startY", startY);
+    console.log("dragY", dragY);
+    if (startY && Boolean(startY - dragY)) {
+      if (startY - dragY > 80) {
+        setCurrent((prev: number) => prev - 1);
+      }
+    }
+  };
+
+  const onTouchEnd: TouchEventHandler<HTMLDivElement> = (event) => {
+    onDragging = false;
+  };
+
   return (
     <>
-      <SliderWrap>
-        <AnimatePresence mode="sync" initial={false}>
-          {numbers.map((item, i) => (
-            <Item
-              key={i}
-              index={i + current - 1}
-              style={{
-                transition: transition,
-              }}
-            >
-              {item}
-            </Item>
-          ))}
-        </AnimatePresence>
+      <SliderWrap
+        onTouchStart={onTouchStart}
+        onTouchMove={onDrag}
+        onTouchEnd={onTouchEnd}
+      >
+        {numbers.map((item, i) => (
+          <Item
+            key={i}
+            index={i + current - 1}
+            style={{
+              transition: transition,
+            }}
+          >
+            {item}
+          </Item>
+        ))}
       </SliderWrap>
       <button onClick={plus} style={{ marginTop: 30 }}>
         플러스

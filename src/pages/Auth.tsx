@@ -7,7 +7,7 @@ import { FlexBox } from "../components/common/styledComponents";
 
 import { AnimatePresence } from "framer-motion";
 import Login from "./Login";
-import Signup from "./Signup";
+import Signup from "./SignUp";
 import Header, { Pages } from "../components/common/Header";
 
 const ColumnBox = styled(FlexBox)`
