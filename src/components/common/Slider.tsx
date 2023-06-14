@@ -1,153 +1,132 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { AnimatePresence, motion } from "framer-motion";
-import React, { DragEvent, TouchEventHandler, useState } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
+import React, {
+  DragEvent,
+  DragEventHandler,
+  TouchEventHandler,
+  useRef,
+  useState,
+} from "react";
 import styled from "styled-components";
 
-const SliderWrap = styled.div`
+const Window = styled(motion.div)`
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   height: 300px;
   background-color: #fff;
+  overflow: hidden;
 `;
 
-interface ItemProps {
-  index: number;
-}
-const makeZindex = ({ index }: ItemProps): number => {
-  if (index === 0 || index === OFFSET - 1) return 2;
-  if (index === 1 || index === OFFSET - 2) return 3;
-  if (index === 2 || index === OFFSET - 3) return 4;
-  return 1;
-};
-const makeTop = ({ index }: ItemProps) => {
-  for (let i = 0; i < OFFSET; i++) {
-    if (i === index) return `${i * 2}0%`;
-  }
-  return "50%";
-};
-
-const makeFontSize = ({ index }: ItemProps) => {
-  if (index === 0 || index === OFFSET - 1) return "14px";
-  if (index === 1 || index === OFFSET - 2) return "16px";
-  if (index === 2 || index === OFFSET - 3) return "24px";
-  return "16px";
-};
-
-const makeFontWeight = ({ index }: ItemProps) => {
-  if (index === 0 || index === OFFSET - 1) return 200;
-  if (index === 1 || index === OFFSET - 2) return 500;
-  if (index === 2 || index === OFFSET - 3) return 900;
-  return 200;
-};
-
-const makeOpacity = ({ index }: ItemProps) => {
-  if (index === 0 || index === OFFSET - 1) return 0.2;
-  if (index === 1 || index === OFFSET - 2) return 0.4;
-  if (index === 2 || index === OFFSET - 3) return 1;
-  return 0;
-};
-
-const Item = styled(motion.div)<{ index: number }>`
+const SliderWrap = styled(motion.div)`
   position: absolute;
   display: flex;
   justify-content: center;
-  align-items: center;
-  /* border: 1px solid red; */
-  /* background-color: #d9d9d9; */
-  pointer-events: none;
+  flex-direction: column;
   width: 100%;
-  height: 90px;
-  font-size: ${makeFontSize};
-  font-weight: bold;
-  top: ${makeTop};
-  z-index: ${makeZindex};
-  opacity: ${makeOpacity};
+  height: max-content;
 `;
 
-const OFFSET = 5;
-const INIT = 1;
-const MAX = 24;
-const TIME = 0.2;
+const Item = styled(motion.div)`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  width: 100%;
+  height: 60px;
+`;
+
+const CenterPointer = styled(motion.div)`
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  border-top: 1px solid red;
+  border-bottom: 1px solid red;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 60px;
+  background-color: #888;
+  opacity: 0.1;
+`;
 
 const TimeSlider = () => {
-  const [current, setCurrent] = useState(0);
-  const TimeLine = Array.from({ length: MAX }, (_, i) => i + 1);
-  const TimeRoll = [MAX - 2, MAX - 1, MAX, ...TimeLine, 1, 2, 3];
-  const [numbers, setNumbers] = useState(TimeRoll);
+  const TimeLine = Array.from({ length: 12 }, (_, i) => i + 1);
+  const [numbers, setNumbers] = useState(TimeLine);
+  const windowRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
-  const [transition, setTransition] = useState(`all ${TIME}s`);
-  console.log(current);
-  const plus = () => {
-    if (current === 0) {
-      setCurrent((prev: number) => prev + 1);
-      // setTimeout(() => {
-      //   setTransition("all 0s");
-      //   setCurrent(-MAX + 1);
-      // }, TIME + 0.1);
+  const y = useMotionValue(0);
 
-      return;
-    }
-    setCurrent((prev: number) => prev + 1);
-  };
+  // const changeY = useTransform(y, (event: any) => {
+  //   console.log(event);
+  //   y.set(-120);
+  // });
 
-  const minus = () => {
-    if (current === -23) {
-      setCurrent(0);
+  // const onDragEnd = (event: any, info: any) => {
+  //   const velocity = info.velocity.y;
+  //   setTimeout(() => {
+  //     let [x, translateY, z]: string[] =
+  //       sliderRef.current?.style.transform.split(" ") as any;
 
-      return;
-    }
-    setCurrent((prev: number) => prev - 1);
-  };
+  //     let numY: number = 0;
+  //     if (translateY && sliderRef.current) {
+  //       const startIdx = translateY.indexOf("(");
+  //       const lastIdx = translateY.indexOf("px");
+  //       numY = Number(translateY.slice(startIdx + 1, lastIdx));
 
-  let startY: number;
-  let dragY: number;
-  let onDragging: boolean = false;
-  const onTouchStart: TouchEventHandler<HTMLDivElement> = (event) => {
-    console.log("touchStart");
-    onDragging = true;
-    startY = event.touches[0].pageY;
-  };
-  const onDrag: TouchEventHandler<HTMLDivElement> = (event) => {
-    dragY = event.touches[0].pageY;
-    console.log("startY", startY);
-    console.log("dragY", dragY);
-    if (startY && Boolean(startY - dragY)) {
-      if (startY - dragY > 80) {
-        setCurrent((prev: number) => prev - 1);
+  //       const remainder = numY % 60;
+  //       if (remainder > 30) {
+  //         const spare = 60 - remainder;
+  //         numY = numY + spare;
+  //       } else {
+  //         numY = numY - remainder;
+  //       }
+  //       console.log(numY);
+
+  //       const newTransform = `${x} translateY(${numY - 60}px) ${z}`;
+  //       sliderRef.current.style.transform = newTransform;
+  //     }
+  //   }, 0);
+  // };
+
+  const onDragEnd = (event: any, info: any) => {
+    const velocity = info.velocity.y;
+    setTimeout(() => {
+      const currentY = y.get();
+      const remainder = currentY % 60;
+      let targetY: number;
+      if (remainder > 30) {
+        const spare = 60 - remainder;
+        targetY = currentY + spare;
+      } else {
+        targetY = currentY - remainder;
       }
-    }
-  };
-
-  const onTouchEnd: TouchEventHandler<HTMLDivElement> = (event) => {
-    onDragging = false;
+      console.log(targetY);
+      y.set(targetY);
+    }, Math.abs(velocity));
   };
 
   return (
-    <>
+    <Window ref={windowRef}>
+      <CenterPointer />
       <SliderWrap
-        onTouchStart={onTouchStart}
-        onTouchMove={onDrag}
-        onTouchEnd={onTouchEnd}
+        ref={sliderRef}
+        style={{ transform: `translateY(${y}px)` }}
+        drag="y"
+        dragConstraints={windowRef}
+        dragMomentum={false}
+        onDragEnd={onDragEnd}
       >
         {numbers.map((item, i) => (
-          <Item
-            key={i}
-            index={i + current - 1}
-            style={{
-              transition: transition,
-            }}
-          >
-            {item}
-          </Item>
+          <Item key={i}>{item}</Item>
         ))}
       </SliderWrap>
-      <button onClick={plus} style={{ marginTop: 30 }}>
-        플러스
-      </button>
-      <button onClick={minus}>마이너스</button>
-    </>
+    </Window>
   );
 };
 
