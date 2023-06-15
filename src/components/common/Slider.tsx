@@ -54,20 +54,33 @@ const CenterPointer = styled(motion.div)`
 
 interface TimeSliderProps {
   items: any[];
+  setValue: React.SetStateAction<any>;
+}
+interface FrameSize {
+  width: number;
+  height: number;
 }
 let startY: number;
 const IH = 60;
 
-const TimeSlider = ({ items }: TimeSliderProps) => {
+const TimeSlider = ({ items, setValue }: TimeSliderProps) => {
   const windowRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const ItemsRef = useRef<HTMLDivElement[]>([]);
   const centerRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
 
-  const [value, setValue] = useState<any>();
+  const [frameSize, setFrameSize] = useState<FrameSize>({
+    width: 0,
+    height: 0,
+  });
 
   useEffect(() => {
+    if (windowRef.current?.parentElement) {
+      const { width, height }: DOMRect =
+        windowRef.current.parentElement?.getClientRects()[0];
+      setFrameSize({ width, height });
+    }
     if (ItemsRef.current) {
       const selected = ItemsRef.current[0];
       selected.style.fontWeight = "bold";
