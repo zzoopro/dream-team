@@ -14,7 +14,7 @@ const Home = () => {
     <Layout>
       <Header page={Pages.home} />
       <h1>HOME</h1>
-      <TimeSlider />
+      <TimeSlider items={Array.from({ length: 12 }, (_, i) => i + 1)} />
       <Footer />
     </Layout>
   );

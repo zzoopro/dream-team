@@ -1,10 +1,8 @@
 import { motion, useMotionValue } from "framer-motion";
 import React, {
-  RefObject,
   TouchEventHandler,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -54,12 +52,13 @@ const CenterPointer = styled(motion.div)`
   opacity: 0.1;
 `;
 
+interface TimeSliderProps {
+  items: any[];
+}
 let startY: number;
 const IH = 60;
-const ITEM_LENGTH = 12;
-const ITEMS = Array.from({ length: ITEM_LENGTH }, (_, i) => i + 1);
 
-const TimeSlider = () => {
+const TimeSlider = ({ items }: TimeSliderProps) => {
   const windowRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const ItemsRef = useRef<HTMLDivElement[]>([]);
@@ -83,14 +82,16 @@ const TimeSlider = () => {
   const onTouchEndCapture: TouchEventHandler = useCallback((event) => {
     const currentY = y.get();
     if (currentY > 0) return y.set(0);
-    if (currentY < (-ITEM_LENGTH + 1) * IH) {
-      return y.set((-ITEM_LENGTH + 1) * IH);
+    if (currentY < (-items.length + 1) * IH) {
+      return y.set((-items.length + 1) * IH);
     }
 
     const remainder = Math.abs(currentY % IH);
-    if (remainder > IH / 2) {
+    // floor
+    if (remainder >= IH / 2) {
       return y.set(currentY - (IH - remainder));
     }
+    // ceil
     if (remainder < IH / 2) {
       return y.set(currentY + remainder);
     }
@@ -175,7 +176,7 @@ const TimeSlider = () => {
         style={{ y }}
       >
         <Box height={IH * 2} />
-        {ITEMS.map((item, i) => (
+        {items.map((item, i) => (
           <Item key={item} ref={(el: any) => (ItemsRef.current[i] = el)}>
             {item}
           </Item>
